@@ -4,10 +4,14 @@
 use std::io::{self, BufRead, Error};
 use std::fs::File;
 use std::path::Path;
-use core::iter::Zip;
+use std::env;
 
 fn main () {
-    let filename: &str = "test.fa";
+    let args: Vec<String> = env::args().collect();
+
+    let filename: &str = &args[1];
+    let k: &usize = &args[2].parse::<usize>().unwrap();
+
     let path: &Path = Path::new(filename);
     let display: std::path::Display<'_> = path.display();
     let file: File = match File::open(&path) {
@@ -27,10 +31,30 @@ fn main () {
         }
     }
 
-    // print interleaved
-    let iter = header.iter().zip(seq.iter());
-    for (h, s) in iter {
-        println!("{}\n{}", h, s);
+    // count all possible k-mers in the sequence
+    let mut kmer: Vec<String> = Vec::new();
+    let mut count: Vec<usize> = Vec::new();
+    for i in 0..seq.len() {
+        let seq: String = seq[i].to_string();
+        for j in 0..seq.len() - k + 1 {
+            let mut kmer_tmp: String = String::new();
+            for l in j..j + k {
+                kmer_tmp.push(seq.chars().nth(l).unwrap());
+            }
+            if kmer.contains(&kmer_tmp) {
+                let index: usize = kmer.iter().position(|x| *x == kmer_tmp).unwrap();
+                count[index] += 1;
+            }
+            else {
+                kmer.push(kmer_tmp);
+                count.push(1);
+            }
+        }
+    }
+
+    // print k-mers
+    for i in 0..kmer.len() {
+        println!("{}: {}", kmer[i], count[i]);
     }
 
 }
