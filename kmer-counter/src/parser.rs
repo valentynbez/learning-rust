@@ -18,18 +18,18 @@ fn open_filestream (filename: &str) -> BufReader<Box<dyn Read>> {
     return reader
 }
 
-
-pub fn parse_fasta (filename: &str) -> (Vec<String>, Vec<String>) {
-    let reader: BufReader<Box<dyn Read>> = open_filestream(filename);
+pub fn collect_headers_sequences (reader: BufReader<Box<dyn Read>>) -> (Vec<String>, Vec<String>) {
     let mut headers: Vec<String> = Vec::new();
     let mut seq: Vec<String> = Vec::new();
     let mut skip_entry: bool = false;
     for line in reader.lines() {
         let line: String = line.unwrap();
         if line.starts_with('>') {
-            let header: String = line[1..].to_string();
+            // remove the first ">" sign
+            // remove comments after space
+            let header: String = line[1..].split_whitespace().next().unwrap().to_string();
             if headers.contains(&header) {
-                println!("Warning: duplicate header {} in file {}. Skipping...", line, filename);
+                println!("Warning: duplicate header \"{}\" in file. Skipping...", header);
                 skip_entry = true;
             }
             else {
@@ -41,5 +41,14 @@ pub fn parse_fasta (filename: &str) -> (Vec<String>, Vec<String>) {
             seq.push(line);
         }
     }
+    return (headers, seq)
+}
+
+
+
+pub fn parse_fasta (filename: &str) -> (Vec<String>, Vec<String>) {
+    let reader: BufReader<Box<dyn Read>> = open_filestream(filename);
+    let (headers, seq) = collect_headers_sequences(reader);
+
     return (headers, seq)
 }
