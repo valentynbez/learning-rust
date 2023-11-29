@@ -1,4 +1,3 @@
-[package]
-name = "fasta"
-version = "0.1.0"
-edition = "2021"
+[workspace]
+members = ["kmer-counter"]
+resolver = "2"

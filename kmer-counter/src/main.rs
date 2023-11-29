@@ -1,50 +1,14 @@
 // write a FASTA parser
 // test file
 
-use std::io::{self, BufRead};
-use std::fs::File;
-use std::path::Path;
 use std::env;
 use std::collections::HashMap;
-
+use kmer_counter::parser::parse_fasta;
 
 struct Sequence {
     header: String,
     seq: String,
     kmers: HashMap<String, usize>
-}
-
-
-
-fn parse_fasta (filename: &str) -> (Vec<String>, Vec<String>) {
-    let path: &Path = Path::new(filename);
-    let display: std::path::Display<'_> = path.display();
-    let file: File = match File::open(&path) {
-        Err(why) => panic!("couldn't open {}: {}", display, why),
-        Ok(file) => file,
-    };
-    let reader: io::BufReader<File> = io::BufReader::new(file);
-    let mut headers: Vec<String> = Vec::new();
-    let mut seq: Vec<String> = Vec::new();
-    let mut skip_entry: bool = false;
-    for line in reader.lines() {
-        let line: String = line.unwrap();
-        if line.starts_with('>') {
-            let header: String = line[1..].to_string();
-            if headers.contains(&header) {
-                println!("Warning: duplicate header {} in file {}. Skipping...", line, filename);
-                skip_entry = true;
-            }
-            else {
-                headers.push(header);
-                skip_entry = false;
-            }
-        }
-        else if !skip_entry{
-            seq.push(line);
-        }
-    }
-    return (headers, seq)
 }
 
 fn count_kmers (seq: &str, k: usize) -> (Vec<String>, Vec<usize>) {
@@ -53,9 +17,14 @@ fn count_kmers (seq: &str, k: usize) -> (Vec<String>, Vec<usize>) {
     for i in 0..seq.len() - k + 1 {
         let mut kmer_tmp: String = String::new();
         for j in i..i + k {
+
             kmer_tmp.push(seq.chars().nth(j).unwrap());
         }
-        if kmer.contains(&kmer_tmp) {
+
+        if kmer_tmp.contains('N') {
+            continue;
+        }
+        else if kmer.contains(&kmer_tmp) {
             let index: usize = kmer.iter().position(|x| *x == kmer_tmp).unwrap();
             count[index] += 1;
         }
@@ -79,9 +48,6 @@ fn main () {
 
     // read FASTA file
     let (headers, seq): (Vec<String>, Vec<String>) = parse_fasta(filename);
-    for s in &seq {
-        println!("{}", s);
-    }
 
     // iterate over sequence and count kmers in each row
     let mut seqs_kmers: Vec<Sequence> = Vec::new();
@@ -99,11 +65,10 @@ fn main () {
 
         seqs_kmers.push(seq_tmp);
 
-        // println!("Sequence: {}", headers[i]);
-        // println!("K-mer\tCount");
-        // for j in 0..kmer_tmp.len() {
-        //     println!("{}\t{}", kmer_tmp[j], count_tmp[j]);
-        // }
-
+        println!("Sequence: {}", headers[i]);
+        println!("K-mer\tCount");
+        for j in 0..kmer_tmp.len() {
+            println!("{}\t{}", kmer_tmp[j], count_tmp[j]);
+        }
     }
 }
