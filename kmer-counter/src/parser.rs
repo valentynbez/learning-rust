@@ -22,6 +22,7 @@ pub fn collect_headers_sequences (reader: BufReader<Box<dyn Read>>) -> (Vec<Stri
     let mut headers: Vec<String> = Vec::new();
     let mut seq: Vec<String> = Vec::new();
     let mut skip_entry: bool = false;
+    let mut seq_tmp: String = String::new();
     for line in reader.lines() {
         let line: String = line.unwrap();
         if line.starts_with('>') {
@@ -33,14 +34,25 @@ pub fn collect_headers_sequences (reader: BufReader<Box<dyn Read>>) -> (Vec<Stri
                 skip_entry = true;
             }
             else {
+                if !seq_tmp.is_empty() {
+                    seq.push(seq_tmp.clone());
+                    seq_tmp.clear();
+                }
+
                 headers.push(header);
                 skip_entry = false;
             }
         }
         else if !skip_entry{
-            seq.push(line);
+            // concatenate lines
+            seq_tmp.push_str(&line);
         }
+
     }
+
+    // add last sequence
+    seq.push(seq_tmp.clone());
+
     return (headers, seq)
 }
 
